@@ -2,11 +2,13 @@ package router
 
 import (
     "fmt"
-    "strings"
     "io/ioutil"
     "net/http"
+    "strings"
 
+    "boolshit.net/kern/context"
     "boolshit.net/kern/log"
+    . "boolshit.net/kern/K"
 )
 
 type RouteNext func()
@@ -21,19 +23,39 @@ type Router struct {
     MountPoint string
     Routes []Route
     NotFoundHandler RouteHandler
+    ExecutePrePost bool
 }
 func New( mountPoint string ) (router *Router) {
     router = &Router{
         MountPoint: mountPoint,
         Routes: make([]Route, 0),
         NotFoundHandler: nil,
+        ExecutePrePost: false,
     }
     return
 }
+
 func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-    router.serve( res, req )
+    kernReq := context.New( res, req )
+    router.serve( res, kernReq )
 }
+
+// handlers for start and end of routing
+func (router *Router) preServe(res http.ResponseWriter, req *http.Request) {
+    k := context.Get(req)
+    log.Debug( "STUFF (sta):", k.Stuff )
+    k.Stuff = 44
+    K(req).Stuff = 1337
+}
+func (router *Router) postServe(res http.ResponseWriter, req *http.Request) {
+    k := context.Get(req)
+    log.Debug( "STUFF (end):", k.Stuff, k )
+}
+
 func (router *Router) serve(res http.ResponseWriter, req *http.Request) {
+    router.preServe( res, req )
+    defer router.postServe( res, req )
+
     for _, route := range router.Routes {
         if (route.Method == "ALL" || req.Method == route.Method ) && strings.HasPrefix( req.URL.Path, route.Path ) {
             resume := false

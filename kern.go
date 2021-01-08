@@ -7,6 +7,7 @@ import (
 
     "boolshit.net/kern/log"
     "boolshit.net/kern/router"
+    "boolshit.net/kern/session"
     "boolshit.net/kern/view"
 )
 
@@ -25,9 +26,12 @@ func New( bindAddr string ) (kern *Kern) {
     view.Globals[ "AppPrefix" ] = "kern.go:"
     view.Globals[ "TitleSuffix" ] = " <- kern.go"
 
-    // Log every call
+    // activate modules via generic route
     kern.Router.All( "/", func( res http.ResponseWriter, req *http.Request, next router.RouteNext ) {
+        // Log every call
         log.SubSection( req.Method, req.URL )
+        // Handle session
+        session.Handle( res, req )
         next()
     })
 
