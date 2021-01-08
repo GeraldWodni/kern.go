@@ -31,7 +31,7 @@ func New( bindAddr string ) (kern *Kern) {
         // Log every call
         log.SubSection( req.Method, req.URL )
         // Handle session
-        session.Handle( res, req )
+        session.Install( res, req )
         next()
     })
 
