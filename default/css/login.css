@@ -1,0 +1,59 @@
+:root {
+    --window-text: #000;
+    --window-background: #CCC;
+    --desktop: #008080;
+
+    --input-border-bright: #EEE;
+    --input-border-dark: 555;
+    --input-border-width: 2px;
+
+    --window-padding: 11px;
+    --window-border-bright: #EEE;
+    --window-border-dark: #555;
+    --window-border-width: 2px;
+}
+
+body {
+    font-size: 11pt;
+    font-family: sans-serif;
+    background-color: var(--desktop);
+}
+
+fieldset {
+    color: var(--window-text);
+    background-color: var(--window-background);
+    border: var(--window-border-width) solid var(--window-border-dark);
+    border-left-color: var(--window-border-bright);
+    border-top-color: var(--window-border-bright);
+
+    padding: 11px;
+
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-gap: 10px;
+}
+
+legend {
+    color: #FFF;
+    font-weight: bold;
+    background: linear-gradient( 90deg, #00F, #000 );
+    width: calc( 100% + var(--window-padding) * 2 - var(--window-border-width) );
+
+    margin-left: calc( var(--window-padding) * -1 );
+}
+
+input {
+    border: var(--input-border-width) solid var(--input-border-bright);
+    border-left-color:  var(--input-border-dark);
+    border-top-color: var(--input-border-dark);
+}
+
+button {
+    font-size: 11pt;
+
+    background-color: var(--window-background);
+    border: var(--input-border-width) solid var(--input-border-bright);
+    border-right-color:  var(--input-border-dark);
+    border-bottom-color: var(--input-border-dark);
+    padding: 2px 5px;
+}
