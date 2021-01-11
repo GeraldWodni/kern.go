@@ -1,4 +1,4 @@
-// kern.go main include
+// kern.go main include, see the [demo repository](https://github.com/GeraldWodni/kern.go-demo) for a full demo.
 // (c)copyright 2021 by Gerald Wodni <gerald.wodni@hmail.com>
 package kern
 
@@ -16,6 +16,8 @@ type Kern struct {
     BindAddr string
 }
 
+// Kern instance hosted on `bindAddr`
+// Hint: mounts `/favicon.ico`, `/css`, `/js`, `/images`, `/files` from `/default/*`
 func New( bindAddr string ) (kern *Kern) {
     kern = &Kern {
         Router: router.New("/"),
@@ -45,6 +47,7 @@ func New( bindAddr string ) (kern *Kern) {
     return
 }
 
+// Run `http.ListenAndServe` for `Kern` instance
 func (kern *Kern) Run() {
     log.Section("Starting kern.go")
 

@@ -1,6 +1,8 @@
-// session management - via a single cookie
-// use Of( http.Request ) to access
-// (c)copyright 2021 by Gerald Wodni <gerald.wodni@gmail.com>
+/*
+    session management - via a single cookie
+
+    (c)copyright 2021 by Gerald Wodni <gerald.wodni@gmail.com>
+*/
 package session
 
 import (
@@ -108,6 +110,8 @@ func destroy( session *Session ) {
 // Install-Of interface: augment request with contexts
 type contextType int; const contextId = contextType(42) // internal context key
 
+// Wrap context of `http.Request` with session.
+// Used by `kern.New`. Updates cookie with `cookieTimeout`
 func Install( res http.ResponseWriter, req *http.Request ) *http.Request {
     session := &Session {}
 
@@ -121,6 +125,7 @@ func Install( res http.ResponseWriter, req *http.Request ) *http.Request {
     return req.WithContext( ctx )
 }
 
+// TODO: add Uninstall to hooks
 func Uninstall( res http.ResponseWriter, req *http.Request ) {
     if session, active := Of( req ); active {
         save( session )
@@ -128,6 +133,7 @@ func Uninstall( res http.ResponseWriter, req *http.Request ) {
 }
 
 // get session for request-context
+// i.e. `session.Of( req ).Id`
 func Of( req *http.Request ) (session *Session, ok bool) {
     session = req.Context().Value( contextId ).(*Session)
     ok = session.active

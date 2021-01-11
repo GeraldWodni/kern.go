@@ -1,3 +1,9 @@
+/*
+    Provides a wrapper class around `html.template`.
+    Loaded templates are kept in cache but watched with `fsnotify` which invalidates the cache and forces a read on the next `Render`
+
+    (c)copyright 2021 by Gerald Wodni <gerald.wodni@gmail.com>
+*/
 package view
 
 import (
@@ -14,6 +20,8 @@ import (
 )
 
 type StringMap map[string]string
+
+// Available to all templates, i.e. `{{.Globals.FooBar}}
 var Globals = make(StringMap)
 
 type View struct {
@@ -23,22 +31,26 @@ type View struct {
     reloadRequiredMutex *sync.Mutex
 }
 
+// Creates a new `View` which is immidiatly loaded and watched for file changes
 func New( filename string ) (view *View, err error) {
     view = &View {
         Filename: filename,
         ReloadRequired: false,
         reloadRequiredMutex: &sync.Mutex{},
     }
-    err = view.Load()
+    err = view.load()
     return
 }
 
+// Wrapper for Render using a `router.RouteHandler`
 func Handler( view *View ) ( routeHandler router.RouteHandler ) {
     return func (res http.ResponseWriter, req *http.Request, next router.RouteNext ) {
         view.Render( res, req, next, nil )
     }
 }
 
+// Load a view and directly return `router.RouteHandler`
+// Hint: useful for views without `locals`
 func NewHandler( filename string ) ( routeHandler router.RouteHandler ) {
     view, err := New( filename )
     if err != nil {
@@ -48,7 +60,7 @@ func NewHandler( filename string ) ( routeHandler router.RouteHandler ) {
     return Handler( view )
 }
 
-func (view *View)Load() (err error) {
+func (view *View)load() (err error) {
     filename := path.Join( "./default/views", view.Filename )
     view.Template, err = template.ParseFiles( filename )
 
@@ -86,7 +98,8 @@ func (view *View)Load() (err error) {
     return
 }
 
-func (view *View)Render( res http.ResponseWriter, req *http.Request, next router.RouteNext, locales interface{} ) {
+// Render view using `Globals` as well as values passed via `locals`
+func (view *View)Render( res http.ResponseWriter, req *http.Request, next router.RouteNext, locals interface{} ) {
     if view.Template == nil {
         router.Err( res, errors.New( "View.Template is nil, check log for previous Errors" ) )
         return
@@ -98,7 +111,7 @@ func (view *View)Render( res http.ResponseWriter, req *http.Request, next router
     if view.ReloadRequired {
         view.ReloadRequired = false
         log.Infof( "Reloading View: %s", view.Filename )
-        err := view.Load()
+        err := view.load()
         if err != nil {
             router.Err( res, err )
             return

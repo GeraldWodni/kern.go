@@ -1,3 +1,8 @@
+/*
+    Colorful logger interface which UTC timestampts and multi-level severity
+
+    (c)copyright 2021 by Gerald Wodni <gerald.wodni@gmail.com>
+*/
 package log
 
 import (

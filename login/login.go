@@ -1,5 +1,8 @@
-// login - handler rejects further routing and displays login form
-// (c)copyright 2021 by Gerald Wodni <gerald.wodni@gmail.com>
+/*
+    login - handler rejects further routing and displays login form
+
+    (c)copyright 2021 by Gerald Wodni <gerald.wodni@gmail.com>
+*/
 package login
 
 import (
@@ -20,6 +23,11 @@ func init() {
     loginView = view
 }
 
+// Stops all further routing when `permission` is not held by current session.
+// Displays `loginView` (`login.gohtml`) when no session is found
+//
+// TODO: implement permissions
+// TODO: use `router.Router` instead of `router.RouteHandler`
 func PermissionReqired( permission string ) router.RouteHandler {
     return func (res http.ResponseWriter, req *http.Request, next router.RouteNext ) {
         if true {
