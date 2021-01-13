@@ -111,9 +111,9 @@ func destroy( session *Session ) {
 
 type contextType int; const contextId = contextType(42) // internal context key
 
-// implement module.Request interface
-type SessionModule struct {}
-func (m *SessionModule) StartRequest(res http.ResponseWriter, reqIn *http.Request) (reqOut *http.Request, ok bool) {
+// implement module.Request interface (privately)
+type sessionModule struct {}
+func (m *sessionModule) StartRequest(res http.ResponseWriter, reqIn *http.Request) (reqOut *http.Request, ok bool) {
     session := &Session {}
     ok=true
 
@@ -127,7 +127,7 @@ func (m *SessionModule) StartRequest(res http.ResponseWriter, reqIn *http.Reques
     reqOut = reqIn.WithContext( ctx )
     return
 }
-func (m *SessionModule) EndRequest(res http.ResponseWriter, req *http.Request) {
+func (m *sessionModule) EndRequest(res http.ResponseWriter, req *http.Request) {
     if session, active := Of( req ); active {
         save( session )
     }
@@ -135,7 +135,7 @@ func (m *SessionModule) EndRequest(res http.ResponseWriter, req *http.Request) {
 
 // privatly register this module upon import
 func init() {
-    module.RegisterRequest( module.Request(& SessionModule{}) )
+    module.RegisterRequest( module.Request(& sessionModule{}) )
     log.Info( "session module registered" )
 }
 
