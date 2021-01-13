@@ -7,8 +7,11 @@ import (
 
     "boolshit.net/kern/log"
     "boolshit.net/kern/router"
-    "boolshit.net/kern/session"
     "boolshit.net/kern/view"
+
+    // import modules
+    // Hint: use `_` when no direct interface is needed, so they are correctly registers as `module`
+    _ "boolshit.net/kern/session"
 )
 
 type Kern struct {
@@ -32,8 +35,6 @@ func New( bindAddr string ) (kern *Kern) {
     kern.Router.All( "/", func( res http.ResponseWriter, req *http.Request, next router.RouteNext ) {
         // Log every call
         log.SubSection( req.Method, req.URL )
-        // Handle session
-        session.Install( res, req )
         next()
     })
 

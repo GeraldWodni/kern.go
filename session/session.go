@@ -15,6 +15,7 @@ import (
 
     //"boolshit.net/kern/context"
     "boolshit.net/kern/log"
+    "boolshit.net/kern/module"
 )
 
 type Session struct {
@@ -69,8 +70,8 @@ func deleteCookie( res http.ResponseWriter ) {
 }
 
 // Start a new session
-func New( res http.ResponseWriter, req *http.Request ) {
-    session, _ := Of( req )
+func New( res http.ResponseWriter, req *http.Request ) (session *Session) {
+    session, _ = Of( req )
     if session.active {
         log.Fatal( "session.New: session already exists" )
         return
@@ -79,6 +80,7 @@ func New( res http.ResponseWriter, req *http.Request ) {
     session.Id = newSessionId()
     session.active = true
     setCookie( res, session.Id )
+    return
 }
 
 // Destroy existing session
@@ -107,29 +109,34 @@ func destroy( session *Session ) {
     log.Info( "Destroying Session: ", session.Id )
 }
 
-// Install-Of interface: augment request with contexts
 type contextType int; const contextId = contextType(42) // internal context key
 
-// Wrap context of `http.Request` with session.
-// Used by `kern.New`. Updates cookie with `cookieTimeout`
-func Install( res http.ResponseWriter, req *http.Request ) *http.Request {
+// implement module.Request interface
+type SessionModule struct {}
+func (m *SessionModule) StartRequest(res http.ResponseWriter, reqIn *http.Request) (reqOut *http.Request, ok bool) {
     session := &Session {}
+    ok=true
 
-    if cookie, err := req.Cookie( cookieName ); err == nil {
+    if cookie, err := reqIn.Cookie( cookieName ); err == nil {
         session.Id = cookie.Value
         load( session )
         setCookie( res, session.Id )
     }
 
-    ctx := context.WithValue( req.Context(), contextId, session )
-    return req.WithContext( ctx )
+    ctx := context.WithValue( reqIn.Context(), contextId, session )
+    reqOut = reqIn.WithContext( ctx )
+    return
 }
-
-// TODO: add Uninstall to hooks
-func Uninstall( res http.ResponseWriter, req *http.Request ) {
+func (m *SessionModule) EndRequest(res http.ResponseWriter, req *http.Request) {
     if session, active := Of( req ); active {
         save( session )
     }
+}
+
+// privatly register this module upon import
+func init() {
+    module.RegisterRequest( module.Request(& SessionModule{}) )
+    log.Info( "session module registered" )
 }
 
 // get session for request-context

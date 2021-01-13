@@ -27,6 +27,8 @@ doc ./view >> $MARKDOWN
 separator
 doc ./session >> $MARKDOWN
 separator
+doc ./module >> $MARKDOWN
+separator
 doc ./login >> $MARKDOWN
 separator
 doc ./log >> $MARKDOWN

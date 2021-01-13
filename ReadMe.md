@@ -121,7 +121,6 @@ type Router struct {
 	MountPoint      string
 	Routes          []Route
 	NotFoundHandler RouteHandler
-	ExecutePrePost  bool
 }
 ```
 
@@ -301,28 +300,6 @@ func Destroy(res http.ResponseWriter, req *http.Request)
 ```
 Destroy existing session
 
-#### func  Install
-
-```go
-func Install(res http.ResponseWriter, req *http.Request) *http.Request
-```
-Wrap context of `http.Request` with session. Used by `kern.New`. Updates cookie
-with `cookieTimeout`
-
-#### func  New
-
-```go
-func New(res http.ResponseWriter, req *http.Request)
-```
-Start a new session
-
-#### func  Uninstall
-
-```go
-func Uninstall(res http.ResponseWriter, req *http.Request)
-```
-TODO: add Uninstall to hooks
-
 #### type Session
 
 ```go
@@ -333,12 +310,85 @@ type Session struct {
 ```
 
 
+#### func  New
+
+```go
+func New(res http.ResponseWriter, req *http.Request) (session *Session)
+```
+Start a new session
+
 #### func  Of
 
 ```go
 func Of(req *http.Request) (session *Session, ok bool)
 ```
 get session for request-context i.e. `session.Of( req ).Id`
+
+#### type SessionModule
+
+```go
+type SessionModule struct{}
+```
+
+implement module.Request interface
+
+#### func (*SessionModule) EndRequest
+
+```go
+func (m *SessionModule) EndRequest(res http.ResponseWriter, req *http.Request)
+```
+
+#### func (*SessionModule) StartRequest
+
+```go
+func (m *SessionModule) StartRequest(res http.ResponseWriter, reqIn *http.Request) (reqOut *http.Request, ok bool)
+```
+
+---
+
+# module
+
+module interfaces - implement proper module for easy extension of kern.go
+
+see `session.sessionModule` for a simple example
+
+
+
+## Usage
+
+#### func  ExecuteEndRequest
+
+```go
+func ExecuteEndRequest(res http.ResponseWriter, req *http.Request)
+```
+Called internally by Router
+
+#### func  ExecuteStartRequest
+
+```go
+func ExecuteStartRequest(res http.ResponseWriter, reqIn *http.Request) (reqOut *http.Request, ok bool)
+```
+Called internally by Router
+
+#### func  RegisterRequest
+
+```go
+func RegisterRequest(requestModule Request)
+```
+
+#### type Request
+
+```go
+type Request interface {
+	// Executed upon request start. Returns a new `http.request` - usually `reqIn` wrapped in a new `Context`.
+	// if `ok` is false, all further request handling will be stopped, handler needs to write `res` himself
+	StartRequest(res http.ResponseWriter, reqIn *http.Request) (reqOut *http.Request, ok bool)
+	// Executed upon exit of request
+	EndRequest(res http.ResponseWriter, req *http.Request)
+}
+```
+
+Request-modules are invoked upon every request
 
 ---
 
