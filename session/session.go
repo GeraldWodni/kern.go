@@ -13,9 +13,9 @@ import (
     "net/http"
     "time"
 
-    //"boolshit.net/kern/context"
     "boolshit.net/kern/log"
     "boolshit.net/kern/module"
+    "boolshit.net/kern/redis"
 )
 
 type Session struct {
@@ -98,15 +98,21 @@ func Destroy( res http.ResponseWriter, req *http.Request ) {
 }
 
 // TODO: redis-stubs
-func load( session *Session ) {
+func load( req *http.Request, session *Session ) {
     log.Info( "Loading Session: ", session.Id )
     session.active = true
     session.Values["archer"] = "well guess what?"
     session.Values["krieger"] = "yep yep yep yep"
 }
 
-func save( session *Session ) {
+func save( req *http.Request, session *Session ) {
     log.Info( "Saving Session: ", session.Id )
+    rdb, err := redis.Of( req )
+    if err {
+        log.Error( "Saving session failed: redis not in http.Request context, is the module loaded?" )
+    }
+    rdb.Do( "SET", "kern.go", "session saved?" )
+    rdb.Flush()
 }
 
 func destroy( session *Session ) {
@@ -123,7 +129,7 @@ func (m *sessionModule) StartRequest(res http.ResponseWriter, reqIn *http.Reques
 
     if cookie, err := reqIn.Cookie( cookieName ); err == nil {
         session.Id = cookie.Value
-        load( session )
+        load( reqIn, session )
         setCookie( res, session.Id )
     }
 
@@ -133,7 +139,7 @@ func (m *sessionModule) StartRequest(res http.ResponseWriter, reqIn *http.Reques
 }
 func (m *sessionModule) EndRequest(res http.ResponseWriter, req *http.Request) {
     if session, active := Of( req ); active {
-        save( session )
+        save( req, session )
     }
 }
 

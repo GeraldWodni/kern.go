@@ -298,6 +298,21 @@ Render view using `Globals` as well as values passed via `locals`
 
 ---
 
+# redis
+
+
+## Usage
+
+#### func  Of
+
+```go
+func Of(req *http.Request) (rdb redis.Conn, ok bool)
+```
+get redis connection from request-context i.e. `redis.Of( req ).Do( "SET",
+"Lana", "aaaaaaaaa" )`
+
+---
+
 # session
 
 session management - via a single cookie

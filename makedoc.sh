@@ -25,6 +25,8 @@ doc ./router >> $MARKDOWN
 separator
 doc ./view >> $MARKDOWN
 separator
+doc ./redis >> $MARKDOWN
+separator
 doc ./session >> $MARKDOWN
 separator
 doc ./module >> $MARKDOWN
