@@ -22,6 +22,10 @@ type Session struct {
     Id string
     Values map[string]string
     active bool
+    // logged in username
+    Username string
+    LoggedIn bool
+    Permissions string
 }
 
 var cookieName string
@@ -37,7 +41,7 @@ func init() {
     }
 }
 
-func newSessionId() (sessionId string) {
+func NewSessionId() (sessionId string) {
     hash := sha256.New()
     buffer := make([]byte, 256/8)
     rand.Read( buffer )
@@ -77,7 +81,7 @@ func New( res http.ResponseWriter, req *http.Request ) (session *Session) {
         return
     }
 
-    session.Id = newSessionId()
+    session.Id = NewSessionId()
     session.active = true
     setCookie( res, session.Id )
     return

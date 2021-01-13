@@ -27,6 +27,9 @@ func New( bindAddr string ) (kern *Kern) {
         BindAddr: bindAddr,
     }
 
+    // Set router name for debugging
+    kern.Router.Name = "kern"
+
     // Set default globals
     view.Globals[ "AppPrefix" ] = "kern.go:"
     view.Globals[ "TitleSuffix" ] = " <- kern.go"

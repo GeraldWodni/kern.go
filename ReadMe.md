@@ -118,6 +118,8 @@ Callback function if a RouteHandler was a match but routing should continue
 
 ```go
 type Router struct {
+	// optionally identify router per name
+	Name            string
 	MountPoint      string
 	Routes          []Route
 	NotFoundHandler RouteHandler
@@ -251,6 +253,17 @@ func NewHandler(filename string) (routeHandler router.RouteHandler)
 Load a view and directly return `router.RouteHandler` Hint: useful for views
 without `locals`
 
+#### type Message
+
+```go
+type Message struct {
+	Type  string // TODO: make enum?
+	Title string
+	Text  string
+}
+```
+
+
 #### type StringMap
 
 ```go
@@ -300,12 +313,23 @@ func Destroy(res http.ResponseWriter, req *http.Request)
 ```
 Destroy existing session
 
+#### func  NewSessionId
+
+```go
+func NewSessionId() (sessionId string)
+```
+
 #### type Session
 
 ```go
 type Session struct {
 	Id     string
 	Values map[string]string
+
+	// logged in username
+	Username    string
+	LoggedIn    bool
+	Permissions string
 }
 ```
 
@@ -323,26 +347,6 @@ Start a new session
 func Of(req *http.Request) (session *Session, ok bool)
 ```
 get session for request-context i.e. `session.Of( req ).Id`
-
-#### type SessionModule
-
-```go
-type SessionModule struct{}
-```
-
-implement module.Request interface
-
-#### func (*SessionModule) EndRequest
-
-```go
-func (m *SessionModule) EndRequest(res http.ResponseWriter, req *http.Request)
-```
-
-#### func (*SessionModule) StartRequest
-
-```go
-func (m *SessionModule) StartRequest(res http.ResponseWriter, reqIn *http.Request) (reqOut *http.Request, ok bool)
-```
 
 ---
 
@@ -403,13 +407,10 @@ login - handler rejects further routing and displays login form
 #### func  PermissionReqired
 
 ```go
-func PermissionReqired(permission string) router.RouteHandler
+func PermissionReqired(path string, permission string) (loginRouter *router.Router)
 ```
 Stops all further routing when `permission` is not held by current session.
 Displays `loginView` (`login.gohtml`) when no session is found
-
-TODO: implement permissions TODO: use `router.Router` instead of
-`router.RouteHandler`
 
 ---
 

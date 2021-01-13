@@ -21,6 +21,12 @@ import (
 
 type StringMap map[string]string
 
+type Message struct {
+    Type string // TODO: make enum?
+    Title string
+    Text string
+}
+
 // Available to all templates, i.e. `{{.Globals.FooBar}}
 var Globals = make(StringMap)
 
@@ -120,8 +126,10 @@ func (view *View)Render( res http.ResponseWriter, req *http.Request, next router
 
     data := struct {
         Globals StringMap
+        Locals interface{}
     }{
         Globals: Globals,
+        Locals: locals,
     }
 
     view.Template.Execute( res, data )

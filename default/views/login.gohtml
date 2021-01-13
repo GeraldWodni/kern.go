@@ -5,6 +5,12 @@
     <link rel="stylesheet" href="/css/login.css"/>
 </head>
 <body>
+    {{range .Locals.Messages}}
+    <div class="message message-{{.Type}}">
+        <b>{{.Title}}</b>
+        <p>{{.Text}}</p>
+    </div>
+    {{end}}
     <form method="post">
         <fieldset>
             <legend>Login {{.Globals.AppName}}</legend>
@@ -12,7 +18,7 @@
             <input type="text" id="username" name="username" autofocus value=""/>
             <label for="password">Password:</label>
             <input type="password" id="password" name="password" value=""/>
-            <button type="submit">Login</button>
+            <button type="submit" name="{{.Locals.LoginField}}" value="{{.Locals.LoginValue}}">Login</button>
         </fieldset>
     </form>
 </body>
