@@ -311,6 +311,11 @@ Render view using `Globals` as well as values passed via `locals`
 
 # redis
 
+provides a redis connection wrapper around each request
+
+__Hint:__ this module is implitly loaded by session.
+
+
 
 ## Usage
 
@@ -619,11 +624,37 @@ Request-modules are invoked upon every request
 
 # login
 
+environment variable based login credentials (useful for docker images in i.e.
+kubernetes)
+
+
+
 login - handler rejects further routing and displays login form
 
 
 
+static credentials, recommended only for developement purposes
+
+
+
 ## Usage
+
+#### func  NewEnvironmentCredentialChecker
+
+```go
+func NewEnvironmentCredentialChecker() *envCredentials
+```
+Load users from environment variables, the prefixes are `KERN_USER_` and
+`KERN_PREMISSIONS_`. Example values: `KERN_USER_bob=soopersecret`
+`KERN_PERMISSIONS_bob=view,add,peel` For usage call: `login.Register(
+login.NewEnvironmentCredentialChecker() )`
+
+#### func  NewStaticCredentials
+
+```go
+func NewStaticCredentials(username string, password string, permissions string) *staticCredentials
+```
+Static credentials (recommended for developement purposes only) Example: ``
 
 #### func  PermissionReqired
 
@@ -632,6 +663,39 @@ func PermissionReqired(path string, permission string) (loginRouter *router.Rout
 ```
 Stops all further routing when `permission` is not held by current session.
 Displays `loginView` (`login.gohtml`) when no session is found
+
+#### func  Register
+
+```go
+func Register(credentialChecker CredentialChecker)
+```
+
+#### type CredentialChecker
+
+```go
+type CredentialChecker interface {
+	Check(username string, password string) (permissions string, ok bool)
+}
+```
+
+
+#### type User
+
+```go
+type User struct {
+	Username    string
+	Password    string
+	Permissions string
+}
+```
+
+user management (static)
+
+#### func (*User) String
+
+```go
+func (user *User) String() string
+```
 
 ---
 

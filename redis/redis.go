@@ -1,11 +1,10 @@
 /*
-    provides a redis wrapper around each request
+    provides a redis connection wrapper around each request
 
     __Hint:__ this module is implitly loaded by session.
 
     (c)copyright 2021 by Gerald Wodni <gerald.wodni@gmail.com>
 */
-
 package redis
 
 import (

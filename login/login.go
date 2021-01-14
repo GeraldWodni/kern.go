@@ -6,6 +6,7 @@
 package login
 
 import (
+    "fmt"
     "net/http"
 
     "boolshit.net/kern/filter"
@@ -21,6 +22,37 @@ var loginView *view.View
 var loginField string
 var loginValue string
 
+var credentialCheckers []CredentialChecker
+
+// user management (static)
+type User struct {
+    Username string
+    Password string
+    Permissions string
+}
+func (user *User) String() string {
+    return fmt.Sprintf( "{ Username: '%s', Password: %t, Permissions: '%s'}", user.Username, user.Password != "", user.Permissions )
+}
+
+type CredentialChecker interface {
+    Check( username string, password string ) (permissions string, ok bool)
+}
+
+func Register( credentialChecker CredentialChecker ) {
+    credentialCheckers = append( credentialCheckers, credentialChecker )
+}
+
+func checkCredentials( username string, password string ) (permissions string, ok bool) {
+    for _, credentialChecker := range credentialCheckers {
+        if permissions, ok = credentialChecker.Check( username, password ); ok {
+            return
+        }
+    }
+    permissions = ""
+    ok = false
+    return
+}
+
 func init() {
     view, err := view.New( "login.gohtml" )
     if err != nil {
@@ -29,12 +61,6 @@ func init() {
     loginView = view
     loginField = session.NewSessionId()
     loginValue = session.NewSessionId()
-}
-
-func checkCredentials( username string, password string ) bool {
-    // TODO: implement file-based credentials
-    log.Info( "username:", username, "password:", password )
-    return username == "tester" && password == "mc testface"
 }
 
 // check if login is correct
@@ -52,10 +78,11 @@ func loginOk( res http.ResponseWriter, req *http.Request, messages *[]view.Messa
 
     username := filter.Post( req, filter.Username )
     password := filter.Post( req, filter.Password )
-    if checkCredentials( username, password ) {
+    if permissions, ok := checkCredentials( username, password ); ok {
         log.Successf( "login: '%s'", username )
         s := session.New( res, req )
         s.Username = username
+        s.Permissions = permissions
         s.LoggedIn = true
         s.Values["customId"] = "customValue"
         return true
@@ -102,6 +129,7 @@ func PermissionReqired( path string, permission string ) (loginRouter *router.Ro
     loginRouter.Name = "Login"
     loginRouter.Post("/", func (res http.ResponseWriter, req *http.Request, next router.RouteNext ) {
         messages := []view.Message{}
+        // TODO: cannot check permission here, allow correct login and then check for permission with a dedicated 403 page
         if sessionOk( req, permission ) {
             next() // keep on routing
             return

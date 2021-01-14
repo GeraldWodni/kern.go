@@ -41,7 +41,7 @@ func Logout( path string ) (logoutRouter *router.Router) {
     logoutRouter.All("/", func (res http.ResponseWriter, req *http.Request, next router.RouteNext ) {
         messages := []view.Message{};
         if s, ok := session.Of( req ); ok {
-            log.Info( "Logout: %s", s.Username )
+            log.Infof( "Logout: %s", s.Username )
             session.Destroy( res, req )
             messages = append( messages, view.Message{
                 Type:  "success",
