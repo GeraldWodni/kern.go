@@ -15,7 +15,7 @@
         <fieldset>
             <legend>Login {{.Globals.AppName}}</legend>
             <label for="username">Username:</label>
-            <input type="text" id="username" name="username" autofocus value=""/>
+            <input type="text" id="username" name="username" autofocus value="{{.Locals.Username}}"/>
             <label for="password">Password:</label>
             <input type="password" id="password" name="password" value=""/>
             <button type="submit" name="{{.Locals.LoginField}}" value="{{.Locals.LoginValue}}">Login</button>

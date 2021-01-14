@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Logout {{.Globals.TitleSuffix}}</title>
+    <link rel="stylesheet" href="/css/login.css"/>
+</head>
+<body>
+    {{range .Locals.Messages}}
+    <div class="message message-{{.Type}}">
+        <b>{{.Title}}</b>
+        <p>{{.Text}}</p>
+    </div>
+    {{end}}
+    <a class="app" href="/">
+        Back to Index
+    </a>
+</body>
+</html>

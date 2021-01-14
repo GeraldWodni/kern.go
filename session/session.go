@@ -11,7 +11,10 @@ import (
     "crypto/sha256"
     "fmt"
     "net/http"
+    "strings"
     "time"
+
+    redigo "github.com/gomodule/redigo/redis"
 
     "boolshit.net/kern/log"
     "boolshit.net/kern/module"
@@ -93,30 +96,88 @@ func Destroy( res http.ResponseWriter, req *http.Request ) {
     if active {
         session.active = false
         deleteCookie( res )
-        destroy( session )
+        destroy( req, session )
     }
 }
 
-// TODO: redis-stubs
+const keyPrefix = "kern.go:session:"
+const hashKeyPrefix = "usr_"
+
+func (session *Session) keyName() string {
+    return keyPrefix + session.Id
+}
+
 func load( req *http.Request, session *Session ) {
     log.Info( "Loading Session: ", session.Id )
     session.active = true
-    session.Values["archer"] = "well guess what?"
-    session.Values["krieger"] = "yep yep yep yep"
+    //session.Values["archer"] = "well guess what?"
+    //session.Values["krieger"] = "yep yep yep yep"
+    rdb, ok := redis.Of( req )
+    if !ok {
+        log.Error( "Loading session failed: redis not in http.Request context, is the module loaded?" )
+        return
+    }
+
+    // TODO: export StringMap in redis/redis.go
+    hash, err := redigo.StringMap( rdb.Do("HGETALL", session.keyName() ) )
+    if err != nil {
+        log.Error( "Session load redis error:", err )
+        return
+    }
+
+    for name, value := range( hash ) {
+        if strings.HasPrefix( name, hashKeyPrefix ) {
+            name = strings.TrimPrefix( name, hashKeyPrefix )
+            session.Values[name] = value
+            log.Info( "Session load Value:", name, value )
+        } else if name == "Username" {
+            session.Username = value
+            session.LoggedIn = value != ""
+            log.Info( "Session load Username:", value )
+        } else {
+            log.Warningf( "Session unknown hash-key: \"%s\" (=\"%s\")", name, value )
+        }
+    }
 }
 
 func save( req *http.Request, session *Session ) {
     log.Info( "Saving Session: ", session.Id )
-    rdb, err := redis.Of( req )
-    if err {
+    rdb, ok := redis.Of( req )
+    if !ok {
         log.Error( "Saving session failed: redis not in http.Request context, is the module loaded?" )
+        return
     }
-    rdb.Do( "SET", "kern.go", "session saved?" )
+    args := make([]interface{}, 0)
+    // add key name, username as argument
+    args = append( args, session.keyName(), "Username", session.Username )
+
+    // add session Values
+    for name, value := range( session.Values ) {
+        args = append( args, hashKeyPrefix + name, value )
+    }
+
+    log.Info( args... )
+    rdb.Send( "HMSET", args... )
+    rdb.Send( "EXPIRE", session.keyName(), int(cookieTimeout.Seconds()) )
     rdb.Flush()
+    if _, err := rdb.Receive(); err != nil {
+        log.Error( "Session save redis hash error:", err )
+    }
+    if _, err := rdb.Receive(); err != nil {
+        log.Error( "Session save redis ttl error:", err )
+    }
 }
 
-func destroy( session *Session ) {
+func destroy( req *http.Request, session *Session ) {
     log.Info( "Destroying Session: ", session.Id )
+    rdb, ok := redis.Of( req )
+    if !ok {
+        log.Error( "Destroying session failed: redis is not in http.Request context, is the module loaded?" )
+        return
+    }
+    if _, err := rdb.Do( "DEL", session.keyName() ); err != nil {
+        log.Error( "Session delete redis error:", err )
+    }
 }
 
 type contextType int; const contextId = contextType(42) // internal context key
@@ -124,7 +185,9 @@ type contextType int; const contextId = contextType(42) // internal context key
 // implement module.Request interface (privately)
 type sessionModule struct {}
 func (m *sessionModule) StartRequest(res http.ResponseWriter, reqIn *http.Request) (reqOut *http.Request, ok bool) {
-    session := &Session {}
+    session := &Session {
+        Values: make(map[string]string),
+    }
     ok=true
 
     if cookie, err := reqIn.Cookie( cookieName ); err == nil {
