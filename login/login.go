@@ -31,6 +31,7 @@ func init() {
 }
 
 func checkCredentials( username string, password string ) bool {
+    // TODO: implement file-based credentials
     log.Info( "username:", username, "password:", password )
     return username == "tester" && password == "mc testface"
 }
@@ -72,9 +73,7 @@ func loginOk( res http.ResponseWriter, req *http.Request, messages *[]view.Messa
 func sessionOk( req *http.Request, permission string ) bool {
     s, ok := session.Of( req )
     // TODO: implement permissions
-    log.Info( "sessionOK? '%s' %v", s.Username, s.LoggedIn )
     if ok && s.LoggedIn {
-        log.Infof( "User: %s", s.Username )
         return true
     }
     return false
@@ -92,7 +91,6 @@ func renderForm( res http.ResponseWriter, req *http.Request, next router.RouteNe
         Username: req.PostFormValue("username"),
         Messages: messages,
     }
-    log.Info( "messages:", messages )
     loginView.Render( res, req, next, locals )
 }
 
@@ -102,9 +100,7 @@ func PermissionReqired( path string, permission string ) (loginRouter *router.Ro
     loginRouter = router.New( path )
     loginRouter.Name = "Login"
     loginRouter.Post("/", func (res http.ResponseWriter, req *http.Request, next router.RouteNext ) {
-        log.Warning( "login:POST/" )
         messages := []view.Message{}
-        log.Info( "login:", req.PostFormValue(loginField) )
         if sessionOk( req, permission ) {
             next() // keep on routing
             return
@@ -114,13 +110,10 @@ func PermissionReqired( path string, permission string ) (loginRouter *router.Ro
             next() // keep on routing
             return
         }
-
         renderForm( res, req, next, messages )
     })
     loginRouter.Get("/", func (res http.ResponseWriter, req *http.Request, next router.RouteNext ) {
-        log.Warning( "login:GET/" )
         if sessionOk( req, permission ) {
-            log.Warning( "login:GET/ resume" )
             next() // keep on routing
             return
         }

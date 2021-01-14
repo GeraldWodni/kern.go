@@ -108,10 +108,6 @@ func (session *Session) keyName() string {
 }
 
 func load( req *http.Request, session *Session ) {
-    log.Info( "Loading Session: ", session.Id )
-    session.active = true
-    //session.Values["archer"] = "well guess what?"
-    //session.Values["krieger"] = "yep yep yep yep"
     rdb, ok := redis.Of( req )
     if !ok {
         log.Error( "Loading session failed: redis not in http.Request context, is the module loaded?" )
@@ -129,19 +125,19 @@ func load( req *http.Request, session *Session ) {
         if strings.HasPrefix( name, hashKeyPrefix ) {
             name = strings.TrimPrefix( name, hashKeyPrefix )
             session.Values[name] = value
-            log.Info( "Session load Value:", name, value )
         } else if name == "Username" {
             session.Username = value
             session.LoggedIn = value != ""
-            log.Info( "Session load Username:", value )
         } else {
             log.Warningf( "Session unknown hash-key: \"%s\" (=\"%s\")", name, value )
         }
     }
+
+    session.active = true
+    log.Infof( "Session loaded: %s (User: '%s')", session.Id, session.Username )
 }
 
 func save( req *http.Request, session *Session ) {
-    log.Info( "Saving Session: ", session.Id )
     rdb, ok := redis.Of( req )
     if !ok {
         log.Error( "Saving session failed: redis not in http.Request context, is the module loaded?" )
@@ -156,7 +152,6 @@ func save( req *http.Request, session *Session ) {
         args = append( args, hashKeyPrefix + name, value )
     }
 
-    log.Info( args... )
     rdb.Send( "HMSET", args... )
     rdb.Send( "EXPIRE", session.keyName(), int(cookieTimeout.Seconds()) )
     rdb.Flush()
@@ -166,6 +161,7 @@ func save( req *http.Request, session *Session ) {
     if _, err := rdb.Receive(); err != nil {
         log.Error( "Session save redis ttl error:", err )
     }
+    log.Infof( "Session saved: %s (User: '%s')", session.Id, session.Username )
 }
 
 func destroy( req *http.Request, session *Session ) {

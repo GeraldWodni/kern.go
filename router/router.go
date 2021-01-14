@@ -64,11 +64,9 @@ func (router *Router) serve(res http.ResponseWriter, req *http.Request) {
         if (route.Method == "ALL" || req.Method == route.Method ) && strings.HasPrefix( req.URL.Path, route.Path ) {
             resume := false
             route.Handler( res, req, func() {
-                log.Debug( router.Name, "serve-next: resume:true")
                 resume = true
             })
             if resume == false {
-                log.Debug( router.Name, "serve-next: resume:false")
                 return
             }
         }
@@ -126,12 +124,9 @@ func (router *Router) Mount( subRouter *Router ) {
     mountPoint := gopath.Join( router.MountPoint, subRouter.MountPoint )
     router.All( mountPoint, func( res http.ResponseWriter, req *http.Request, next RouteNext ) {
         subRouter.NotFoundHandler = func( _ http.ResponseWriter, _ *http.Request, _ RouteNext ) {
-            log.Debug("Subrouter(NEXT)", mountPoint, subRouter)
             next()
         }
-        log.Debug("Subrouter[[", mountPoint, subRouter.Name)
         subRouter.serve( res, req )
-        log.Debug("]]Subrouter", mountPoint, subRouter.Name)
     })
 }
 // Wrapper to create a mounted router.
