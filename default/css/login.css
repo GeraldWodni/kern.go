@@ -9,8 +9,15 @@
 
     --window-padding: 11px;
     --window-border-bright: #EEE;
-    --window-border-dark: #555;
+    --window-border-dark: #999;
     --window-border-width: 2px;
+
+    --title-text: #FFF;
+    --title-height: 20px;
+    --title-gradient: linear-gradient( 90deg, #00F, #000 );
+    --title-padding-left: 3px;
+
+    --window-margin: 30px;
 }
 
 body {
@@ -36,7 +43,7 @@ fieldset {
 legend {
     color: #FFF;
     font-weight: bold;
-    background: linear-gradient( 90deg, #00F, #000 );
+    background: var(--title-gradient);
     width: calc( 100% + var(--window-padding) * 2 - var(--window-border-width) );
 
     margin-left: calc( var(--window-padding) * -1 );
@@ -56,4 +63,46 @@ button {
     border-right-color:  var(--input-border-dark);
     border-bottom-color: var(--input-border-dark);
     padding: 2px 5px;
+}
+
+
+.message {
+    --icon-size: 32px;
+    --icon-top: calc( var(--window-padding) + var(--title-height) );
+    --icon-left: var(--window-padding);
+    --padding-left: calc( var(--window-padding)*2 + var(--icon-size) );
+    --min-height: calc( var(--icon-top) + var(--icon-size) + var(--window-padding) );
+
+    background-color: var(--window-background);
+    border: var(--window-border-width) solid var(--window-border-dark);
+    border-left-color: var(--window-border-bright);
+    border-top-color: var(--window-border-bright);
+
+    padding-left: var(--padding-left);
+    min-height: var(--min-height);
+
+    margin-bottom: var(--window-margin);
+
+    background-repeat: no-repeat;
+    background-position-x: var(--icon-left);
+    background-position-y: var(--icon-top);
+}
+
+
+.message.message-error {
+    background-image: url('/images/messages/error.png');
+}
+
+.message.message-success {
+    background-image: url('/images/messages/success.png');
+}
+
+/* title */
+.message b {
+    display: block;
+    margin-left: calc( var(--padding-left) * -1 );
+    padding-left: var(--title-padding-left);
+
+    color: var(--title-text);
+    background: var(--title-gradient);
 }
