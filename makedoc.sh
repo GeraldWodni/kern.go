@@ -33,6 +33,8 @@ doc ./module >> $MARKDOWN
 separator
 doc ./login >> $MARKDOWN
 separator
+doc ./logout >> $MARKDOWN
+separator
 doc ./log >> $MARKDOWN
 
 cat $MARKDOWN | marked --gfm > $HTML

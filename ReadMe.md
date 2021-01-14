@@ -429,6 +429,24 @@ Displays `loginView` (`login.gohtml`) when no session is found
 
 ---
 
+# logout
+
+logout - router destroys any session and warns otherwise
+
+
+
+## Usage
+
+#### func  Logout
+
+```go
+func Logout(path string) (logoutRouter *router.Router)
+```
+Stops all further routing when `permission` is not held by current session.
+Displays `logoutView` (`logout.gohtml`) when no session is found
+
+---
+
 # log
 
 Colorful logger interface which UTC timestampts and multi-level severity
