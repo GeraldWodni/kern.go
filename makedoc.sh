@@ -14,27 +14,41 @@ function doc {
         | sed -e 's/(c).*>//'
 }
 
+function toc  {
+    echo -e -n "- [kern](#kern)\\\\n"
+    for MODULE in $MODULES; do
+        echo -e -n "- [$MODULE](#$MODULE)\\\\n"
+    done
+}
+
 function separator {
 echo -e "\n---\n" >> $MARKDOWN
 }
 
 # add module here
+MODULES="
+    router
+    view
+    redis
+    session
+    module
+    login
+    logout
+    log
+    "
+
 doc . > $MARKDOWN
-separator
-doc ./router >> $MARKDOWN
-separator
-doc ./view >> $MARKDOWN
-separator
-doc ./redis >> $MARKDOWN
-separator
-doc ./session >> $MARKDOWN
-separator
-doc ./module >> $MARKDOWN
-separator
-doc ./login >> $MARKDOWN
-separator
-doc ./logout >> $MARKDOWN
-separator
-doc ./log >> $MARKDOWN
+
+
+# module documentation
+for MODULE in $MODULES; do
+    echo "Module: $MODULE"
+    separator
+    doc ./$MODULE >> $MARKDOWN
+done
+
+# toc
+TOC=$(toc)
+sed -i -e "s/# Documentation/# Documentation\\n $TOC/" $MARKDOWN
 
 cat $MARKDOWN | marked --gfm > $HTML

@@ -26,6 +26,16 @@ func main() {
 
 ---
 # Documentation
+ - [kern](#kern)
+- [router](#router)
+- [view](#view)
+- [redis](#redis)
+- [session](#session)
+- [module](#module)
+- [login](#login)
+- [logout](#logout)
+- [log](#log)
+
 ---
 # kern
 
