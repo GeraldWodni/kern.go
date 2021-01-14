@@ -30,6 +30,7 @@ func main() {
 - [router](#router)
 - [view](#view)
 - [redis](#redis)
+- [filter](#filter)
 - [session](#session)
 - [module](#module)
 - [login](#login)
@@ -320,6 +321,201 @@ func Of(req *http.Request) (rdb redis.Conn, ok bool)
 ```
 get redis connection from request-context i.e. `redis.Of( req ).Do( "SET",
 "Lana", "aaaaaaaaa" )`
+
+---
+
+# filter
+
+sanitize input - all unwanted characters are removed
+
+__HINT:__ always use theese functions for receiving user input. Only access the
+input directly if you are certain there is no other way.
+
+
+
+## Usage
+
+#### func  Address
+
+```go
+func Address(t string) string
+```
+
+#### func  Allocnum
+
+```go
+func Allocnum(t string) string
+```
+
+#### func  Alnum
+
+```go
+func Alnum(t string) string
+```
+
+#### func  AlnumList
+
+```go
+func AlnumList(t string) string
+```
+
+#### func  Alpha
+
+```go
+func Alpha(t string) string
+```
+
+#### func  Boolean
+
+```go
+func Boolean(t string) string
+```
+
+#### func  Color
+
+```go
+func Color(t string) string
+```
+
+#### func  DateTime
+
+```go
+func DateTime(t string) string
+```
+
+#### func  Decimal
+
+```go
+func Decimal(t string) string
+```
+
+#### func  Email
+
+```go
+func Email(t string) string
+```
+
+#### func  EscapedLink
+
+```go
+func EscapedLink(t string) string
+```
+
+#### func  Filename
+
+```go
+func Filename(t string) string
+```
+
+#### func  Filepath
+
+```go
+func Filepath(t string) string
+```
+
+#### func  Hex
+
+```go
+func Hex(t string) string
+```
+
+#### func  Id
+
+```go
+func Id(t string) string
+```
+
+#### func  Int
+
+```go
+func Int(t string) string
+```
+
+#### func  Link
+
+```go
+func Link(t string) string
+```
+
+#### func  LinkItem
+
+```go
+func LinkItem(t string) string
+```
+
+#### func  LinkList
+
+```go
+func LinkList(t string) string
+```
+
+#### func  Password
+
+```go
+func Password(t string) string
+```
+
+#### func  Post
+
+```go
+func Post(req *http.Request, filter Filter) string
+```
+Get PostValue from request, using the lowecase filter-name as name
+
+#### func  PostName
+
+```go
+func PostName(req *http.Request, name string, filter Filter) string
+```
+Get PostValue from request and sanizie it )
+
+#### func  Raw
+
+```go
+func Raw(t string) string
+```
+
+#### func  SingleLine
+
+```go
+func SingleLine(t string) string
+```
+
+#### func  Telephone
+
+```go
+func Telephone(t string) string
+```
+
+#### func  Text
+
+```go
+func Text(t string) string
+```
+
+#### func  Uint
+
+```go
+func Uint(t string) string
+```
+
+#### func  Url
+
+```go
+func Url(t string) string
+```
+
+#### func  Username
+
+```go
+func Username(t string) string
+```
+
+#### type Filter
+
+```go
+type Filter func(text string) string
+```
 
 ---
 

@@ -8,6 +8,7 @@ package login
 import (
     "net/http"
 
+    "boolshit.net/kern/filter"
     "boolshit.net/kern/log"
     "boolshit.net/kern/router"
     "boolshit.net/kern/session"
@@ -49,8 +50,8 @@ func loginOk( res http.ResponseWriter, req *http.Request, messages *[]view.Messa
         return false
     }
 
-    username := req.PostFormValue( "username" )
-    password := req.PostFormValue( "password" )
+    username := filter.Post( req, filter.Username )
+    password := filter.Post( req, filter.Password )
     if checkCredentials( username, password ) {
         log.Successf( "login: '%s'", username )
         s := session.New( res, req )
@@ -88,7 +89,7 @@ func renderForm( res http.ResponseWriter, req *http.Request, next router.RouteNe
     }{
         LoginField: loginField,
         LoginValue: loginValue,
-        Username: req.PostFormValue("username"),
+        Username: filter.Post( req, filter.Username ),
         Messages: messages,
     }
     loginView.Render( res, req, next, locals )

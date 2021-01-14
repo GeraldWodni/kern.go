@@ -30,6 +30,7 @@ MODULES="
     router
     view
     redis
+    filter
     session
     module
     login
