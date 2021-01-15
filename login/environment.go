@@ -13,7 +13,7 @@ import (
 )
 
 const envUserPrefix = "KERN_USER_"
-const envPermissionPrefix = "KERN_PERMISSION_"
+const envPermissionPrefix = "KERN_PERMISSIONS_"
 
 type envCredentials struct {
     users map[string]*User
@@ -52,12 +52,12 @@ func NewEnvironmentCredentialChecker() *envCredentials {
         if strings.HasPrefix( name, envPermissionPrefix ) {
             if user, exists := credentialChecker.users[ username ]; exists {
                 // update existing user
-                user.Password = value
+                user.Permissions = value
             } else {
                 // create new user
                 credentialChecker.users[ username ] = &User {
                     Username: username,
-                    Password: value,
+                    Permissions: value,
                 }
             }
         }
@@ -65,12 +65,12 @@ func NewEnvironmentCredentialChecker() *envCredentials {
 
     for name, user := range credentialChecker.users {
         if user.Password == "" {
-            log.Error( "login.EnvironmentCredentialChecker: user '%s' has no password set, login disabled", name )
+            log.Errorf( "login.EnvironmentCredentialChecker: user '%s' has no password set, login disabled", name )
             delete( credentialChecker.users, name )
             continue
         }
         if user.Permissions == "" {
-            log.Warning( "login.EnvironmentCredentialChecker: user '%s' has no permissions set", name )
+            log.Warningf( "login.EnvironmentCredentialChecker: user '%s' has no permissions set", name )
         }
         log.Successf( "login.EnvironmentCredentialChecker user added: %v", user )
     }
