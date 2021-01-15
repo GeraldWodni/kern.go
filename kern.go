@@ -1,5 +1,8 @@
-// kern.go main include, see the [demo repository](https://github.com/GeraldWodni/kern.go-demo) for a full demo.
-// (c)copyright 2021 by Gerald Wodni <gerald.wodni@hmail.com>
+/*
+    kern.go main include, see the [demo repository](https://github.com/GeraldWodni/kern.go-demo) for a full demo.
+
+    (c)copyright 2021 by Gerald Wodni <gerald.wodni@hmail.com>
+*/
 package kern
 
 import (

@@ -24,6 +24,12 @@ func main() {
 }
 ```
 
+### Fresh looks (fully responsive):
+
+![login](screenshots/login.png)
+
+![logout](screenshots/logout.png)
+
 ---
 # Documentation
  - [kern](#kern)
@@ -42,6 +48,7 @@ func main() {
 
 kern.go main include, see the [demo
 repository](https://github.com/GeraldWodni/kern.go-demo) for a full demo.
+
 
 
 ## Usage

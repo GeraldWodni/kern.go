@@ -18,12 +18,17 @@
     --title-padding-left: 3px;
 
     --window-margin: 30px;
+
+    --icon-size: 32px;
+    --app-text: var(--title-text);
 }
 
 body {
     font-size: 11pt;
     font-family: sans-serif;
     background-color: var(--desktop);
+
+    box-sizing: border-box;
 }
 
 fieldset {
@@ -67,7 +72,6 @@ button {
 
 
 .message {
-    --icon-size: 32px;
     --icon-top: calc( var(--window-padding) + var(--title-height) );
     --icon-left: var(--window-padding);
     --padding-left: calc( var(--window-padding)*2 + var(--icon-size) );
@@ -105,4 +109,24 @@ button {
 
     color: var(--title-text);
     background: var(--title-gradient);
+}
+
+a.application {
+    --app-padding: calc( var(--window-padding) / 2 );
+
+    background-image: url('/images/icons/index.png');
+    background-position: top center;
+    background-repeat: no-repeat;
+
+    display: inline-block;
+
+    padding-top: calc( var(--icon-size) + var(--app-padding) );
+
+    color: var(--app-text);
+    text-decoration: none;
+    border: 1px solid transparent;
+}
+
+a.application:hover {
+    border: 1px dotted #FFFFFF;
 }
