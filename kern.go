@@ -8,6 +8,7 @@ package kern
 import (
     "net/http"
 
+    "boolshit.net/kern/hierarchy"
     "boolshit.net/kern/log"
     "boolshit.net/kern/router"
     "boolshit.net/kern/view"
@@ -19,14 +20,22 @@ import (
 
 type Kern struct {
     Router *router.Router
+    Hierarchy *hierarchy.Hierarchy
     BindAddr string
 }
 
 // Kern instance hosted on `bindAddr`
 // Hint: mounts `/favicon.ico`, `/css`, `/js`, `/images`, `/files` from `/default/*`
-func New( bindAddr string ) (kern *Kern) {
+func New( bindAddr string, hierarchyPrefixes []string ) (kern *Kern) {
+
+    hierarchyInstance, err := hierarchy.New( hierarchyPrefixes )
+    if err != nil {
+        log.Fatal( err )
+    }
+
     kern = &Kern {
         Router: router.New("/"),
+        Hierarchy: hierarchyInstance,
         BindAddr: bindAddr,
     }
 
@@ -62,7 +71,7 @@ func (kern *Kern) Run() {
     http.Handle( "/", kern.Router )
 
     // Catchall 404 at the end of routing
-    notFound, err := view.New( "errors/404.gohtml" )
+    notFound, err := view.New( kern.Hierarchy.LookupFatal( "views", "errors/404.gohtml" ) )
     if err != nil {
         log.Error( err )
     }

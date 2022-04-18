@@ -8,10 +8,10 @@ package view
 
 import (
     "errors"
-    "path"
-    "sync"
-    "net/http"
     "html/template"
+    "net/http"
+    "sync"
+    "time"
 
     "github.com/fsnotify/fsnotify"
 
@@ -67,8 +67,7 @@ func NewHandler( filename string ) ( routeHandler router.RouteHandler ) {
 }
 
 func (view *View)load() (err error) {
-    filename := path.Join( "./default/views", view.Filename )
-    view.Template, err = template.ParseFiles( filename )
+    view.Template, err = template.ParseFiles( view.Filename )
 
     // watch for file changes
     if err == nil {
@@ -98,7 +97,7 @@ func (view *View)load() (err error) {
                 }
             }
         }()
-        err = watcher.Add( filename )
+        err = watcher.Add( view.Filename )
     }
 
     return
@@ -124,12 +123,17 @@ func (view *View)Render( res http.ResponseWriter, req *http.Request, next router
         }
     }
 
+    now := time.Now().UTC()
     data := struct {
         Globals StringMap
         Locals interface{}
+        Now time.Time
+        NowISO string
     }{
         Globals: Globals,
         Locals: locals,
+        Now: now,
+        NowISO: now.Format("2006-01-02 15:04:05"),
     }
 
     view.Template.Execute( res, data )

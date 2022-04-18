@@ -84,7 +84,7 @@ func Log( level string, a ...interface{} ) {
     for _, argument := range a {
         out += separator
         out += fmt.Sprintf( "%v", argument )
-        separator = ", "
+        separator = " "
     }
     out += Colors["Reset"]
     if level == LevelFatal {
