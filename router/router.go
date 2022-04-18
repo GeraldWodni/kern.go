@@ -12,9 +12,11 @@ import (
     gopath "path"
     "fmt"
     "io/ioutil"
+    "mime"
     "net/http"
     "strings"
 
+    "boolshit.net/kern/hierarchy"
     "boolshit.net/kern/log"
     "boolshit.net/kern/module"
 )
@@ -142,15 +144,18 @@ func (router *Router) NewMounted( mountPoint string ) (subRouter *Router) {
 //     kern.Router.StaticFile( "/favicon.ico", "image/x-icon", "./default/images/favicon.ico" )
 func (router *Router) StaticFile( path string, contentType string, filename string ) {
     router.Get( path, func( res http.ResponseWriter, req *http.Request, next RouteNext ) {
-        content, err := ioutil.ReadFile( filename )
-        if err != nil {
-            Err( res, err )
-            return
-        }
-
-        res.Header().Set( "Content-Type", contentType )
-        res.Write( content )
+        serveFile( res, contentType, filename )
     })
+}
+func serveFile( res http.ResponseWriter, contentType string, filename string ) {
+    content, err := ioutil.ReadFile( filename )
+    if err != nil {
+        Err( res, err )
+        return
+    }
+
+    res.Header().Set( "Content-Type", contentType )
+    res.Write( content )
 }
 // `FileServer` wrapper for exposing the contents of `dir` under `path`
 func (router *Router) StaticDir( path string, dir string ) {
@@ -159,6 +164,22 @@ func (router *Router) StaticDir( path string, dir string ) {
         http.StripPrefix( path, fileServer ).ServeHTTP( res, req )
     })
 }
+// Serve file after hierarchy lookup
+func (router *Router) HierarchyDir( h *hierarchy.Hierarchy, path string ) {
+    router.Get( path, func( res http.ResponseWriter, req *http.Request, next RouteNext ) {
+        suffixPath := strings.TrimPrefix( req.URL.Path, path )
+        contentType := mime.TypeByExtension( gopath.Ext(suffixPath) )
+
+        filename, ok := h.Lookup( path, suffixPath )
+        if !ok {
+            next()
+            return
+        }
+
+        serveFile( res, contentType, filename )
+    })
+}
+
 // Send `text` with the correct mimetype
 func (router *Router) StaticText( path string, text string ) {
     router.Get( path, func( res http.ResponseWriter, req *http.Request, next RouteNext ) {

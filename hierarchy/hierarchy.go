@@ -19,7 +19,7 @@ type Hierarchy struct {
 
 // Creates a new `Hierarchy` with a list of prefixes; hint: `default` is automatically appended.
 func New( prefixes []string ) (hierarchy *Hierarchy, err error) {
-    prefixes = append( prefixes, "default" )
+    prefixes = append( prefixes, "./default" )
 
     hierarchy = &Hierarchy {
         Prefixes: prefixes,
@@ -55,17 +55,28 @@ func (hierarchy *Hierarchy)LookupFatal( suffixes ...string ) (filename string) {
 func (hierarchy *Hierarchy)Lookup( suffixes ...string ) (filename string, ok bool) {
     suffix := path.Join( suffixes... )
     for _, prefix := range hierarchy.Prefixes {
-        filename = path.Join( prefix, suffix )
-        file, err := os.Open( filename )
-
-        if err != nil && os.IsNotExist( err ) {
-            continue
+        filename, ok = hierarchy.LookupFile( prefix, suffix )
+        if ok {
+            return
         }
-        file.Close()
-        ok = true
-        return
     }
 
-    ok = false
+    return
+}
+
+func (hierarchy *Hierarchy) Exists( prefix string, suffix string ) (ok bool) {
+    _, ok = hierarchy.LookupFile( prefix, suffix )
+    return
+}
+
+func (hierarchy *Hierarchy) LookupFile( prefix string, suffix string ) (filename string, ok bool) {
+    filename = path.Join( prefix, suffix )
+    file, err := os.Open( filename )
+
+    if err != nil && os.IsNotExist( err ) {
+        return
+    }
+    file.Close()
+    ok = true
     return
 }

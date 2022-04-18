@@ -55,10 +55,10 @@ func New( bindAddr string, hierarchyPrefixes []string ) (kern *Kern) {
 
     // static routes go first
     kern.Router.StaticFile( "/favicon.ico", "image/x-icon", "./default/images/favicon.ico" )
-    kern.Router.StaticDir( "/css",    "./default/css"    )
-    kern.Router.StaticDir( "/js",     "./default/js"     )
-    kern.Router.StaticDir( "/images", "./default/images" )
-    kern.Router.StaticDir( "/files",  "./default/files"  )
+    kern.Router.HierarchyDir( hierarchyInstance, "/css" )
+    kern.Router.HierarchyDir( hierarchyInstance, "/js" )
+    kern.Router.HierarchyDir( hierarchyInstance, "/images" )
+    kern.Router.HierarchyDir( hierarchyInstance, "./default/files"  )
 
     return
 }
