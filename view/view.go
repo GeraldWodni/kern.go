@@ -172,6 +172,9 @@ func NewTextHandler( filename string, contentType string ) ( routeHandler router
     }
     return Handler( view )
 }
+func NewCssHandler( filename string ) ( routeHandler router.RouteHandler ) {
+    return NewTextHandler( filename, "text/css; charset=utf-8" )
+}
 
 func (view *HtmlView) loadTemplate() (err error) {
     view.Template, err = htmlTemplate.New( path.Base(view.Filename) ).Funcs( htmlFuncMap ).ParseFiles( view.Filename )
@@ -281,6 +284,7 @@ func render( viewInterface ViewInterface, res http.ResponseWriter, req *http.Req
         NowISO: now.Format("2006-01-02 15:04:05"),
     }
 
+    res.Header().Set( "Content-Type", view.ContentType )
     err := template.Execute( res, data )
     if err != nil {
         log.Error( "View.Render", err )
