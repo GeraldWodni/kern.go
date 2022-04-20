@@ -8,6 +8,7 @@ package view
 
 import (
     "errors"
+    "io"
     htmlTemplate "html/template"
     textTemplate "text/template"
     "net/http"
@@ -17,7 +18,7 @@ import (
     "strings"
     "time"
 
-    //"github.com/fsnotify/fsnotify"
+    "github.com/fsnotify/fsnotify"
 
     "boolshit.net/kern/log"
     "boolshit.net/kern/router"
@@ -70,8 +71,14 @@ type View struct {
     ContentType string
 }
 
+type ViewTemplate interface {
+    Execute(w io.Writer, data any) error
+}
 type ViewInterface interface {
     Render( http.ResponseWriter, *http.Request, router.RouteNext, interface{} )
+    getTemplate() ViewTemplate
+    getView() *View
+    loadTemplate() error
 }
 
 
@@ -121,7 +128,7 @@ func NewHtml( filename string ) (view *HtmlView, err error) {
         },
         Template: nil,
     }
-    err = view.load()
+    err = loadAndWatch( view )
     return
 }
 func NewText( filename string, contentType string ) (view *TextView, err error) {
@@ -134,7 +141,7 @@ func NewText( filename string, contentType string ) (view *TextView, err error) 
         },
         Template: nil,
     }
-    err = view.load()
+    err = loadAndWatch( view )
     return
 }
 
@@ -166,9 +173,6 @@ func NewTextHandler( filename string, contentType string ) ( routeHandler router
     return Handler( view )
 }
 
-func (view *View) loadTemplate() error {
-    return errors.New( "View.loadTemplate not implemented" )
-}
 func (view *HtmlView) loadTemplate() (err error) {
     view.Template, err = htmlTemplate.New( path.Base(view.Filename) ).Funcs( htmlFuncMap ).ParseFiles( view.Filename )
     return
@@ -177,78 +181,91 @@ func (view *TextView) loadTemplate() (err error) {
     view.Template, err = textTemplate.New( path.Base(view.Filename) ).Funcs( textFuncMap ).ParseFiles( view.Filename )
     return
 }
+func (view *HtmlView) getView() *View {
+    return &view.View
+}
+func (view *TextView) getView() *View {
+    return &view.View
+}
+func (view *HtmlView) getTemplate() ViewTemplate {
+    return view.Template
+}
+func (view *TextView) getTemplate() ViewTemplate {
+    return view.Template
+}
 
-func (view *HtmlView) load() (err error) {
-    err = view.loadTemplate()
+
+
+func loadAndWatch( viewInterface ViewInterface ) (err error) {
+    err = viewInterface.loadTemplate()
+    view := viewInterface.getView()
+
+    // watch for file changes
+    if err == nil {
+        var watcher *fsnotify.Watcher
+        watcher, err = fsnotify.NewWatcher()
+        if err != nil {
+            return
+        }
+        go func() {
+            for {
+                select {
+                    case _, ok := <-watcher.Events:
+                        if !ok {
+                            return
+                        }
+                        view.reloadRequiredMutex.Lock()
+                        if !view.ReloadRequired {
+                            log.Infof( "Change detected, reload scheduled for view: %s", view.Filename )
+                        }
+                        view.ReloadRequired = true
+                        view.reloadRequiredMutex.Unlock()
+                    case err, ok := <-watcher.Errors:
+                        if !ok {
+                            return
+                        }
+                        log.Error( "view.Load->watcher", err )
+                }
+            }
+        }()
+        err = watcher.Add( view.Filename )
+    }
+
     return
 }
-func (view *TextView) load() (err error) {
-    err = view.loadTemplate()
-    return
-}
 
-
-//func (view *View)load() (err error) {
-//    err = view.loadTemplate()
-//
-//    // watch for file changes
-//    if err == nil {
-//        var watcher *fsnotify.Watcher
-//        watcher, err = fsnotify.NewWatcher()
-//        if err != nil {
-//            return
-//        }
-//        go func() {
-//            for {
-//                select {
-//                    case _, ok := <-watcher.Events:
-//                        if !ok {
-//                            return
-//                        }
-//                        view.reloadRequiredMutex.Lock()
-//                        if !view.ReloadRequired {
-//                            log.Infof( "Change detected, reload scheduled for view: %s", view.Filename )
-//                        }
-//                        view.ReloadRequired = true
-//                        view.reloadRequiredMutex.Unlock()
-//                    case err, ok := <-watcher.Errors:
-//                        if !ok {
-//                            return
-//                        }
-//                        log.Error( "view.Load->watcher", err )
-//                }
-//            }
-//        }()
-//        err = watcher.Add( view.Filename )
-//    }
-//
-//    return
-//}
-
+// Render view using `Globals` as well as values passed via `locals`
 func (view *HtmlView) Render( res http.ResponseWriter, req *http.Request, next router.RouteNext, locals interface{} ) {
-    if view.Template == nil {
-        router.Err( res, errors.New( "HtmlView.Template is nil, check log for previous Errors" ) )
-        return
-    }
-
-    err := view.Template.Execute( res, getLocaleData( req, locals ) )
-    if err != nil { log.Error( "TextView.Render", err ) }
+    render( view, res, req, next, locals )
 }
-
 func (view *TextView) Render( res http.ResponseWriter, req *http.Request, next router.RouteNext, locals interface{} ) {
-    if view.Template == nil {
-        router.Err( res, errors.New( "TextView.Template is nil, check log for previous Errors" ) )
+    render( view, res, req, next, locals )
+}
+// TODO: figure out if there is a way to mount this function directly onto the type
+func render( viewInterface ViewInterface, res http.ResponseWriter, req *http.Request, next router.RouteNext, locals interface{} ) {
+    template := viewInterface.getTemplate()
+    if template == nil {
+        router.Err( res, errors.New( "View.Template is nil, check log for previous Errors" ) )
         return
     }
 
-    err := view.Template.Execute( res, getLocaleData( req, locals ) )
-    if err != nil { log.Error( "TextView.Render", err ) }
-}
+    // reload on template change
+    view := viewInterface.getView()
+    view.reloadRequiredMutex.Lock()
+    defer view.reloadRequiredMutex.Unlock()
+    if view.ReloadRequired {
+        view.ReloadRequired = false
+        log.Infof( "Reloading View: %s", view.Filename )
+        err := loadAndWatch( viewInterface )
+        if err != nil {
+            router.Err( res, err )
+            return
+        }
+    }
 
-func getLocaleData( req *http.Request, locals interface{} ) (data interface{}) {
     hostname, _, _ := strings.Cut( req.Host, ":" )
     now := time.Now().UTC()
-    data = struct {
+    data := struct {
         Globals InterfaceMap
         Env InterfaceMap
         Locals interface{}
@@ -263,33 +280,10 @@ func getLocaleData( req *http.Request, locals interface{} ) (data interface{}) {
         Now: now,
         NowISO: now.Format("2006-01-02 15:04:05"),
     }
-    return
+
+    err := template.Execute( res, data )
+    if err != nil {
+        log.Error( "View.Render", err )
+    }
 }
 
-// Render view using `Globals` as well as values passed via `locals`
-//func (view *ViewInterface)Render( res http.ResponseWriter, req *http.Request, next router.RouteNext, locals interface{} ) {
-//    if view.Template == nil {
-//        router.Err( res, errors.New( "View.Template is nil, check log for previous Errors" ) )
-//        return
-//    }
-//
-//    // reload on template change
-//    view.reloadRequiredMutex.Lock()
-//    defer view.reloadRequiredMutex.Unlock()
-//    if view.ReloadRequired {
-//        view.ReloadRequired = false
-//        log.Infof( "Reloading View: %s", view.Filename )
-//        err := view.load()
-//        if err != nil {
-//            router.Err( res, err )
-//            return
-//        }
-//    }
-//
-//
-//    res.Header().Set("Content-Type", view.ContentType )
-//    err := view.Template.Execute( res, data )
-//    if err != nil {
-//        log.Error( "view.Render", err );
-//    }
-//}
