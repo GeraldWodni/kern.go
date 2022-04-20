@@ -71,7 +71,7 @@ func (kern *Kern) Run() {
     http.Handle( "/", kern.Router )
 
     // Catchall 404 at the end of routing
-    notFound, err := view.New( kern.Hierarchy.LookupFatal( "views", "errors/404.gohtml" ) )
+    notFound, err := view.NewHtml( kern.Hierarchy.LookupFatal( "views", "errors/404.gohtml" ) )
     if err != nil {
         log.Error( err )
     }

@@ -1,6 +1,6 @@
 module boolshit.net/kern
 
-go 1.15
+go 1.18
 
 require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
