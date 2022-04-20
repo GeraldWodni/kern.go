@@ -10,7 +10,9 @@ import (
     "errors"
     "html/template"
     "net/http"
+    "os"
     "sync"
+    "strings"
     "time"
 
     "github.com/fsnotify/fsnotify"
@@ -19,7 +21,7 @@ import (
     "boolshit.net/kern/router"
 )
 
-type StringMap map[string]string
+type InterfaceMap map[string]interface{}
 
 type Message struct {
     Type string // TODO: make enum?
@@ -28,7 +30,29 @@ type Message struct {
 }
 
 // Available to all templates, i.e. `{{.Globals.FooBar}}
-var Globals = make(StringMap)
+var Globals = make(InterfaceMap)
+
+// Environment
+const envViewPrefix = "KERN_VIEW_"
+var envValues = make(InterfaceMap)
+
+// Functions exposed to template
+var funcs = template.FuncMap{
+    "Hallo": func () string {
+        return "HALLO FUNC"
+    },
+    "Hallos": func () []string {
+        return []string {
+            "H1",
+            "h2",
+            "h3",
+        }
+    },
+    "ToUpper": strings.ToUpper,
+    "Extra": func(text string) string {
+        return text + "EXTRA"
+    },
+}
 
 type View struct {
     Template *template.Template
@@ -36,6 +60,27 @@ type View struct {
     ReloadRequired bool
     reloadRequiredMutex *sync.Mutex
 }
+
+// Load environment
+func envGetName( name string ) string {
+    return strings.TrimPrefix( name, envViewPrefix )
+}
+func init() {
+    for _, env := range os.Environ() {
+        parts := strings.SplitN( env, "=", 2 )
+        name  := parts[0]
+        value := parts[1]
+        viewName := envGetName( name )
+        if strings.HasPrefix( name, envViewPrefix ) {
+            if strings.HasSuffix( name, "_HTML" ) {
+                envValues[ viewName ] = template.HTML( value )
+            } else {
+                envValues[ viewName ] = value
+            }
+        }
+    }
+}
+
 
 // Creates a new `View` which is immidiatly loaded and watched for file changes
 func New( filename string ) (view *View, err error) {
@@ -123,18 +168,28 @@ func (view *View)Render( res http.ResponseWriter, req *http.Request, next router
         }
     }
 
+    hostname, _, _ := strings.Cut( req.Host, ":" )
     now := time.Now().UTC()
     data := struct {
-        Globals StringMap
+        Globals InterfaceMap
+        Env InterfaceMap
+        Funcs template.FuncMap
         Locals interface{}
+        Hostname string
         Now time.Time
         NowISO string
     }{
         Globals: Globals,
+        Env: envValues,
+        Funcs: funcs,
         Locals: locals,
+        Hostname: hostname,
         Now: now,
         NowISO: now.Format("2006-01-02 15:04:05"),
     }
 
-    view.Template.Execute( res, data )
+    err := view.Template.Execute( res, data )
+    if err != nil {
+        log.Error( "view.Render", err );
+    }
 }
