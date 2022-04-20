@@ -11,6 +11,7 @@ import (
     "html/template"
     "net/http"
     "os"
+    "path"
     "sync"
     "strings"
     "time"
@@ -36,22 +37,26 @@ var Globals = make(InterfaceMap)
 const envViewPrefix = "KERN_VIEW_"
 var envValues = make(InterfaceMap)
 
-// Functions exposed to template
+// Pipeline functions exposed to template
 var funcs = template.FuncMap{
-    "Hallo": func () string {
-        return "HALLO FUNC"
-    },
     "Hallos": func () []string {
-        return []string {
-            "H1",
-            "h2",
-            "h3",
+        return []string { "H1", "h2", "h3", }
+    },
+    "Split": strings.Split,
+    "Lines": func(text string) []string {
+        return strings.Split( text, "\n" )
+    },
+    "NonEmpty": func(lines []string) []string {
+        nonEmptyLines := make([]string, 0)
+        for _, line := range lines {
+            if len(line) > 0 {
+                nonEmptyLines = append( nonEmptyLines, line )
+            }
         }
+        return nonEmptyLines
     },
     "ToUpper": strings.ToUpper,
-    "Extra": func(text string) string {
-        return text + "EXTRA"
-    },
+    "ToLower": strings.ToLower,
 }
 
 type View struct {
@@ -112,7 +117,7 @@ func NewHandler( filename string ) ( routeHandler router.RouteHandler ) {
 }
 
 func (view *View)load() (err error) {
-    view.Template, err = template.ParseFiles( view.Filename )
+    view.Template, err = template.New( path.Base(view.Filename) ).Funcs( funcs ).ParseFiles( view.Filename )
 
     // watch for file changes
     if err == nil {
@@ -173,7 +178,6 @@ func (view *View)Render( res http.ResponseWriter, req *http.Request, next router
     data := struct {
         Globals InterfaceMap
         Env InterfaceMap
-        Funcs template.FuncMap
         Locals interface{}
         Hostname string
         Now time.Time
@@ -181,7 +185,6 @@ func (view *View)Render( res http.ResponseWriter, req *http.Request, next router
     }{
         Globals: Globals,
         Env: envValues,
-        Funcs: funcs,
         Locals: locals,
         Hostname: hostname,
         Now: now,
