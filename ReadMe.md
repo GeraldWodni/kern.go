@@ -13,8 +13,8 @@ A simple demo application can be found in the [demo-repository](https://github.c
 ```go
 package main
 import (
-    "boolshit.net/kern"
-    "boolshit.net/kern/view"
+    "github.com/GeraldWodni/kern.go"
+    "github.com/GeraldWodni/kern.go/view"
 )
 func main() {
     app := kern.New(":5000")

@@ -20,8 +20,8 @@ import (
 
     "github.com/fsnotify/fsnotify"
 
-    "boolshit.net/kern/log"
-    "boolshit.net/kern/router"
+    "github.com/GeraldWodni/kern.go/log"
+    "github.com/GeraldWodni/kern.go/router"
 )
 
 type InterfaceMap map[string]interface{}

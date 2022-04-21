@@ -16,9 +16,9 @@ import (
     "net/http"
     "strings"
 
-    "boolshit.net/kern/hierarchy"
-    "boolshit.net/kern/log"
-    "boolshit.net/kern/module"
+    "github.com/GeraldWodni/kern.go/hierarchy"
+    "github.com/GeraldWodni/kern.go/log"
+    "github.com/GeraldWodni/kern.go/module"
 )
 
 // Callback function if a RouteHandler was a match but routing should continue

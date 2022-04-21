@@ -16,7 +16,7 @@ import (
     "runtime"
     "reflect"
 
-    "boolshit.net/kern/log"
+    "github.com/GeraldWodni/kern.go/log"
 )
 
 type Filter func( text string ) string
@@ -68,7 +68,7 @@ func Username   ( t string ) string { return f( t, "[^-@_.a-zA-Z0-9]"           
 // Reflection based lookup
 func filterName( filter Filter ) string {
     name := runtime.FuncForPC( reflect.ValueOf(filter).Pointer() ).Name()
-    return strings.ReplaceAll( name, "boolshit.net/kern/filter.", "" )
+    return strings.ReplaceAll( name, "github.com/GeraldWodni/kern.go/filter.", "" )
 }
 
 func fieldName( filter Filter ) string {

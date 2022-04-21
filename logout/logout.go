@@ -8,10 +8,10 @@ package logout
 import (
     "net/http"
 
-    "boolshit.net/kern/log"
-    "boolshit.net/kern/router"
-    "boolshit.net/kern/session"
-    "boolshit.net/kern/view"
+    "github.com/GeraldWodni/kern.go/log"
+    "github.com/GeraldWodni/kern.go/router"
+    "github.com/GeraldWodni/kern.go/session"
+    "github.com/GeraldWodni/kern.go/view"
 )
 
 var logoutView *view.View

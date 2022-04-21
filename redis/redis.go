@@ -14,8 +14,8 @@ import (
 
     "github.com/gomodule/redigo/redis"
 
-    "boolshit.net/kern/log"
-    "boolshit.net/kern/module"
+    "github.com/GeraldWodni/kern.go/log"
+    "github.com/GeraldWodni/kern.go/module"
 )
 
 // TODO: make configureable

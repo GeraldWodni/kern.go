@@ -16,9 +16,9 @@ import (
 
     redigo "github.com/gomodule/redigo/redis"
 
-    "boolshit.net/kern/log"
-    "boolshit.net/kern/module"
-    "boolshit.net/kern/redis"
+    "github.com/GeraldWodni/kern.go/log"
+    "github.com/GeraldWodni/kern.go/module"
+    "github.com/GeraldWodni/kern.go/redis"
 )
 
 type Session struct {

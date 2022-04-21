@@ -10,7 +10,7 @@ import (
     "path"
     "os"
 
-    "boolshit.net/kern/log"
+    "github.com/GeraldWodni/kern.go/log"
 )
 
 type Hierarchy struct {

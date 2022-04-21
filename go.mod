@@ -1,4 +1,4 @@
-module boolshit.net/kern
+module github.com/GeraldWodni/kern.go
 
 go 1.18
 

@@ -9,7 +9,7 @@ import (
     "os"
     "strings"
 
-    "boolshit.net/kern/log"
+    "github.com/GeraldWodni/kern.go/log"
 )
 
 const envUserPrefix = "KERN_USER_"

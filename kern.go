@@ -8,14 +8,14 @@ package kern
 import (
     "net/http"
 
-    "boolshit.net/kern/hierarchy"
-    "boolshit.net/kern/log"
-    "boolshit.net/kern/router"
-    "boolshit.net/kern/view"
+    "github.com/GeraldWodni/kern.go/hierarchy"
+    "github.com/GeraldWodni/kern.go/log"
+    "github.com/GeraldWodni/kern.go/router"
+    "github.com/GeraldWodni/kern.go/view"
 
     // import modules
     // Hint: use `_` when no direct interface is needed, so they are correctly registers as `module`
-    _ "boolshit.net/kern/session"
+    _ "github.com/GeraldWodni/kern.go/session"
 )
 
 type Kern struct {
