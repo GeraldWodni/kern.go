@@ -8,6 +8,7 @@ package hierarchy
 
 import (
     "path"
+    "io/ioutil"
     "os"
 
     "github.com/GeraldWodni/kern.go/log"
@@ -77,6 +78,54 @@ func (hierarchy *Hierarchy) LookupFile( prefix string, suffix string ) (filename
         return
     }
     file.Close()
+    ok = true
+    return
+}
+
+// load contents of folder and allow hierarchical overwriting
+func (hierarchy *Hierarchy) LookupDirectory( suffixes ...string ) (filenames []string, ok bool) {
+    suffix := path.Join( suffixes... )
+    filenames = []string{}
+    foundFilenames := []string{}
+    for _, prefix := range hierarchy.Prefixes {
+        if newFilenames, newOk := lookupDirectory( prefix, suffix ); newOk {
+            for _, newFilename := range newFilenames {
+                if contains( foundFilenames, newFilename ) {
+                    continue
+                }
+                foundFilenames = append( foundFilenames, newFilename )
+                filename := path.Join( prefix, suffix, newFilename )
+                filenames = append( filenames, filename )
+            }
+            ok = true
+        }
+    }
+    return
+}
+
+func contains[ T comparable ]( items []T, needle T ) bool {
+    for _, item := range items {
+        if item == needle {
+            return true
+        }
+    }
+    return false
+}
+
+func lookupDirectory( prefix string, suffix string ) (filenames []string, ok bool) {
+    filenames = []string{}
+    dirname := path.Join( prefix, suffix )
+    files, err := ioutil.ReadDir( dirname )
+
+    if err != nil {
+        return
+    }
+
+    for _, file := range files {
+        if !file.IsDir() {
+            filenames = append( filenames, file.Name() )
+        }
+    }
     ok = true
     return
 }

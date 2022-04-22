@@ -65,14 +65,16 @@ var funcs = FuncMap{
 }
 
 type View struct {
-    Filename string
+    Filenames []string
     ReloadRequired bool
+    TemplateName string
     reloadRequiredMutex *sync.Mutex
     ContentType string
 }
 
 type ViewTemplate interface {
     Execute(w io.Writer, data any) error
+    ExecuteTemplate(w io.Writer, template string, data any) error
 }
 type ViewInterface interface {
     Render( http.ResponseWriter, *http.Request, router.RouteNext, interface{} )
@@ -118,11 +120,12 @@ func init() {
 
 
 // Creates a new `View` which is immidiatly loaded and watched for file changes
-func NewHtml( filename string ) (view *HtmlView, err error) {
+func NewHtml( filenames ...string ) (view *HtmlView, err error) {
     view = &HtmlView {
         View: View {
             ContentType: "text/html; charset=utf-8",
-            Filename: filename,
+            Filenames: filenames,
+            TemplateName: "layout",
             ReloadRequired: false,
             reloadRequiredMutex: &sync.Mutex{},
         },
@@ -131,11 +134,12 @@ func NewHtml( filename string ) (view *HtmlView, err error) {
     err = loadAndWatch( view )
     return
 }
-func NewText( filename string, contentType string ) (view *TextView, err error) {
+func NewText( contentType string, filenames ...string ) (view *TextView, err error) {
     view = &TextView {
         View: View {
             ContentType: contentType,
-            Filename: filename,
+            Filenames: filenames,
+            TemplateName: "",
             ReloadRequired: false,
             reloadRequiredMutex: &sync.Mutex{},
         },
@@ -154,34 +158,34 @@ func Handler( view ViewInterface ) ( routeHandler router.RouteHandler ) {
 
 // Load a view and directly return `router.RouteHandler`
 // Hint: useful for views without `locals`
-func NewHtmlHandler( filename string ) ( routeHandler router.RouteHandler ) {
+func NewHtmlHandler( filenames ...string ) ( routeHandler router.RouteHandler ) {
     var view ViewInterface
     var err error
-    view, err = NewHtml( filename )
+    view, err = NewHtml( filenames... )
     if err != nil {
         log.Error( err )
         return router.ErrHandler( err )
     }
     return Handler( view )
 }
-func NewTextHandler( filename string, contentType string ) ( routeHandler router.RouteHandler ) {
-    view, err := NewText( filename, contentType )
+func NewTextHandler( contentType string, filenames ...string ) ( routeHandler router.RouteHandler ) {
+    view, err := NewText( contentType, filenames... )
     if err != nil {
         log.Error( err )
         return router.ErrHandler( err )
     }
     return Handler( view )
 }
-func NewCssHandler( filename string ) ( routeHandler router.RouteHandler ) {
-    return NewTextHandler( filename, "text/css; charset=utf-8" )
+func NewCssHandler( filenames ...string ) ( routeHandler router.RouteHandler ) {
+    return NewTextHandler( "text/css; charset=utf-8", filenames... )
 }
 
 func (view *HtmlView) loadTemplate() (err error) {
-    view.Template, err = htmlTemplate.New( path.Base(view.Filename) ).Funcs( htmlFuncMap ).ParseFiles( view.Filename )
+    view.Template, err = htmlTemplate.New( path.Base(view.Filenames[0]) ).Funcs( htmlFuncMap ).ParseFiles( view.Filenames... )
     return
 }
 func (view *TextView) loadTemplate() (err error) {
-    view.Template, err = textTemplate.New( path.Base(view.Filename) ).Funcs( textFuncMap ).ParseFiles( view.Filename )
+    view.Template, err = textTemplate.New( path.Base(view.Filenames[0]) ).Funcs( textFuncMap ).ParseFiles( view.Filenames... )
     return
 }
 func (view *HtmlView) getView() *View {
@@ -219,7 +223,7 @@ func loadAndWatch( viewInterface ViewInterface ) (err error) {
                         }
                         view.reloadRequiredMutex.Lock()
                         if !view.ReloadRequired {
-                            log.Infof( "Change detected, reload scheduled for view: %s", view.Filename )
+                            log.Infof( "Change detected, reload scheduled for view: %s", view.Filenames[0] )
                         }
                         view.ReloadRequired = true
                         view.reloadRequiredMutex.Unlock()
@@ -231,7 +235,7 @@ func loadAndWatch( viewInterface ViewInterface ) (err error) {
                 }
             }
         }()
-        err = watcher.Add( view.Filename )
+        err = watcher.Add( view.Filenames[0] )
     }
 
     return
@@ -258,12 +262,13 @@ func render( viewInterface ViewInterface, res http.ResponseWriter, req *http.Req
     defer view.reloadRequiredMutex.Unlock()
     if view.ReloadRequired {
         view.ReloadRequired = false
-        log.Infof( "Reloading View: %s", view.Filename )
+        log.Infof( "Reloading View: %s", view.Filenames[0] )
         err := loadAndWatch( viewInterface )
         if err != nil {
             router.Err( res, err )
             return
         }
+        template = viewInterface.getTemplate()
     }
 
     hostname, _, _ := strings.Cut( req.Host, ":" )
@@ -285,7 +290,12 @@ func render( viewInterface ViewInterface, res http.ResponseWriter, req *http.Req
     }
 
     res.Header().Set( "Content-Type", view.ContentType )
-    err := template.Execute( res, data )
+    var err error
+    if view.TemplateName == "" {
+        err = template.Execute( res, data )
+    } else {
+        err = template.ExecuteTemplate( res, "layout", data )
+    }
     if err != nil {
         log.Error( "View.Render", err )
     }
