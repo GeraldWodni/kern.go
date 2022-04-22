@@ -29,6 +29,7 @@ echo -e "\n---\n" >> $MARKDOWN
 MODULES="
     router
     view
+    hierarchy
     redis
     filter
     session

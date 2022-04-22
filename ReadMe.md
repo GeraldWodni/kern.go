@@ -35,6 +35,7 @@ func main() {
  - [kern](#kern)
 - [router](#router)
 - [view](#view)
+- [hierarchy](#hierarchy)
 - [redis](#redis)
 - [filter](#filter)
 - [session](#session)
@@ -57,8 +58,9 @@ repository](https://github.com/GeraldWodni/kern.go-demo) for a full demo.
 
 ```go
 type Kern struct {
-	Router   *router.Router
-	BindAddr string
+	Router    *router.Router
+	Hierarchy *hierarchy.Hierarchy
+	BindAddr  string
 }
 ```
 
@@ -66,7 +68,7 @@ type Kern struct {
 #### func  New
 
 ```go
-func New(bindAddr string) (kern *Kern)
+func New(bindAddr string, hierarchyPrefixes []string) (kern *Kern)
 ```
 Kern instance hosted on `bindAddr` Hint: mounts `/favicon.ico`, `/css`, `/js`,
 `/images`, `/files` from `/default/*`
@@ -175,6 +177,13 @@ func (router *Router) Get(path string, handler RouteHandler)
 ```
 Match all `GET` requests on `path`
 
+#### func (*Router) HierarchyDir
+
+```go
+func (router *Router) HierarchyDir(h *hierarchy.Hierarchy, path string)
+```
+Serve file after hierarchy lookup
+
 #### func (*Router) Mount
 
 ```go
@@ -252,24 +261,75 @@ on the next `Render`
 ## Usage
 
 ```go
-var Globals = make(StringMap)
+var Globals = make(InterfaceMap)
 ```
 Available to all templates, i.e. `{{.Globals.FooBar}}
 
 #### func  Handler
 
 ```go
-func Handler(view *View) (routeHandler router.RouteHandler)
+func Handler(view ViewInterface) (routeHandler router.RouteHandler)
 ```
 Wrapper for Render using a `router.RouteHandler`
 
-#### func  NewHandler
+#### func  NewCssHandler
 
 ```go
-func NewHandler(filename string) (routeHandler router.RouteHandler)
+func NewCssHandler(filenames ...string) (routeHandler router.RouteHandler)
+```
+
+#### func  NewHtmlHandler
+
+```go
+func NewHtmlHandler(filenames ...string) (routeHandler router.RouteHandler)
 ```
 Load a view and directly return `router.RouteHandler` Hint: useful for views
 without `locals`
+
+#### func  NewTextHandler
+
+```go
+func NewTextHandler(contentType string, filenames ...string) (routeHandler router.RouteHandler)
+```
+
+#### type FuncMap
+
+```go
+type FuncMap map[string]any
+```
+
+Pipeline functions exposed to template
+
+#### type HtmlView
+
+```go
+type HtmlView struct {
+	View
+	Template *htmlTemplate.Template
+}
+```
+
+
+#### func  NewHtml
+
+```go
+func NewHtml(filenames ...string) (view *HtmlView, err error)
+```
+Creates a new `View` which is immidiatly loaded and watched for file changes
+
+#### func (*HtmlView) Render
+
+```go
+func (view *HtmlView) Render(res http.ResponseWriter, req *http.Request, next router.RouteNext, locals interface{})
+```
+Render view using `Globals` as well as values passed via `locals`
+
+#### type InterfaceMap
+
+```go
+type InterfaceMap map[string]interface{}
+```
+
 
 #### type Message
 
@@ -282,20 +342,76 @@ type Message struct {
 ```
 
 
-#### type StringMap
+#### type TextView
 
 ```go
-type StringMap map[string]string
+type TextView struct {
+	View
+	Template *textTemplate.Template
+}
 ```
 
+
+#### func  NewText
+
+```go
+func NewText(contentType string, filenames ...string) (view *TextView, err error)
+```
+
+#### func (*TextView) Render
+
+```go
+func (view *TextView) Render(res http.ResponseWriter, req *http.Request, next router.RouteNext, locals interface{})
+```
 
 #### type View
 
 ```go
 type View struct {
-	Template       *template.Template
-	Filename       string
+	Filenames      []string
 	ReloadRequired bool
+	TemplateName   string
+
+	ContentType string
+}
+```
+
+
+#### type ViewInterface
+
+```go
+type ViewInterface interface {
+	Render(http.ResponseWriter, *http.Request, router.RouteNext, interface{})
+	// contains filtered or unexported methods
+}
+```
+
+
+#### type ViewTemplate
+
+```go
+type ViewTemplate interface {
+	Execute(w io.Writer, data any) error
+	ExecuteTemplate(w io.Writer, template string, data any) error
+}
+```
+
+---
+
+# hierarchy
+
+Hierarchical lookup for pathes. Instead of a hardcoded path, a list of
+directories is traversed to allow for easy extension and subvolume-mounting.
+
+
+
+## Usage
+
+#### type Hierarchy
+
+```go
+type Hierarchy struct {
+	Prefixes []string
 }
 ```
 
@@ -303,16 +419,43 @@ type View struct {
 #### func  New
 
 ```go
-func New(filename string) (view *View, err error)
+func New(prefixes []string) (hierarchy *Hierarchy, err error)
 ```
-Creates a new `View` which is immidiatly loaded and watched for file changes
+Creates a new `Hierarchy` with a list of prefixes; hint: `default` is
+automatically appended.
 
-#### func (*View) Render
+#### func (*Hierarchy) Exists
 
 ```go
-func (view *View) Render(res http.ResponseWriter, req *http.Request, next router.RouteNext, locals interface{})
+func (hierarchy *Hierarchy) Exists(prefix string, suffix string) (ok bool)
 ```
-Render view using `Globals` as well as values passed via `locals`
+
+#### func (*Hierarchy) Lookup
+
+```go
+func (hierarchy *Hierarchy) Lookup(suffixes ...string) (filename string, ok bool)
+```
+lookup with optional fail
+
+#### func (*Hierarchy) LookupDirectory
+
+```go
+func (hierarchy *Hierarchy) LookupDirectory(suffixes ...string) (filenames []string, ok bool)
+```
+load contents of folder and allow hierarchical overwriting
+
+#### func (*Hierarchy) LookupFatal
+
+```go
+func (hierarchy *Hierarchy) LookupFatal(suffixes ...string) (filename string)
+```
+lookup with fatal fail
+
+#### func (*Hierarchy) LookupFile
+
+```go
+func (hierarchy *Hierarchy) LookupFile(prefix string, suffix string) (filename string, ok bool)
+```
 
 ---
 
