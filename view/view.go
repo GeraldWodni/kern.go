@@ -207,6 +207,10 @@ func loadAndWatch( viewInterface ViewInterface ) (err error) {
     err = viewInterface.loadTemplate()
     view := viewInterface.getView()
 
+    if os.Getenv("KERN_NO_WATCH") == "true" {
+        return
+    }
+
     // watch for file changes
     if err == nil {
         var watcher *fsnotify.Watcher
