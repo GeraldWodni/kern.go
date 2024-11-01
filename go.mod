@@ -1,9 +1,10 @@
 module github.com/GeraldWodni/kern.go
 
-go 1.18
+go 1.23
 
 require (
-	github.com/fsnotify/fsnotify v1.4.9 // indirect
-	github.com/gomodule/redigo v1.8.3 // indirect
-	golang.org/x/sys v0.0.0-20210105210732-16f7687f5001 // indirect
+	github.com/fsnotify/fsnotify v1.8.0
+	github.com/gomodule/redigo v1.9.2
 )
+
+require golang.org/x/sys v0.26.0 // indirect
